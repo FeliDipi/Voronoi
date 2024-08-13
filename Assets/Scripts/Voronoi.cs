@@ -1,81 +1,75 @@
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Voronoi : MonoBehaviour
 {
-    [SerializeField] private int _numberOfPoints = 10;
-    [SerializeField] private Vector2Int _size = new Vector2Int(10, 10);
+    [SerializeField] private int _textureWidth = 256;
+    [SerializeField] private int _textureHeight = 256;
+    [SerializeField] private int _pointCount = 10;
+    [SerializeField] private RawImage _uiImage;
 
-    private List<Vector2> _points = new List<Vector2>();
-    private SpriteRenderer _spr;
+    private Texture2D _voronoiTexture;
+    private Vector2[] _points;
+    private Color[] _colors;
 
-    private void Awake()
-    {
-        _spr = GetComponent<SpriteRenderer>();
-    }
-
-    void Start()
+    private void Start()
     {
         Generate();
     }
 
-    private void Update()
+    public void Generate()
     {
-        if (Input.GetKeyDown(KeyCode.R)) Generate();
-    }
-
-    private void Generate()
-    {
-        _spr.sprite = null;
-        _points.Clear();
-
         GeneratePoints();
-        GenerateVoronoi();
+        GenerateVoronoiTexture();
+        ApplyTextureToUI();
     }
 
     private void GeneratePoints()
     {
-        _points = new List<Vector2>();
-        for (int i = 0; i < _numberOfPoints; i++)
+        _points = new Vector2[_pointCount];
+        _colors = new Color[_pointCount];
+
+        for (int i = 0; i < _pointCount; i++)
         {
-            Vector2 newPoint = new Vector2(Random.Range(0, _size.x), Random.Range(0, _size.y));
-            _points.Add(newPoint);
+            _points[i] = new Vector2(Random.Range(0, _textureWidth), Random.Range(0, _textureHeight));
+            _colors[i] = new Color(Random.value, Random.value, Random.value);
         }
     }
 
-    private void GenerateVoronoi()
+    private void GenerateVoronoiTexture()
     {
-        Texture2D texture = new Texture2D(_size.x, _size.y);
-        for (int x = 0; x < _size.x; x++)
-        {
-            for (int y = 0; y < _size.y; y++)
-            {
-                Vector2 closestPoint = _points[0];
-                float closestDistance = Vector2.Distance(new Vector2(x, y), _points[0]);
+        _voronoiTexture = new Texture2D(_textureWidth, _textureHeight);
 
-                foreach (Vector2 point in _points)
+        for (int y = 0; y < _textureHeight; y++)
+        {
+            for (int x = 0; x < _textureWidth; x++)
+            {
+                Vector2 pixelPos = new Vector2(x, y);
+                float closestDistance = float.MaxValue;
+                int closestPointIndex = 0;
+
+                for (int i = 0; i < _pointCount; i++)
                 {
-                    float distance = Vector2.Distance(new Vector2(x, y), point);
+                    float distance = Vector2.Distance(pixelPos, _points[i]);
                     if (distance < closestDistance)
                     {
-                        closestPoint = point;
                         closestDistance = distance;
+                        closestPointIndex = i;
                     }
                 }
 
-                texture.SetPixel(x, y, ColorFromPoint(closestPoint));
+                _voronoiTexture.SetPixel(x, y, _colors[closestPointIndex]);
             }
         }
 
-        texture.Apply();
-        _spr.sprite = Sprite.Create(texture, new Rect(0, 0, _size.x, _size.y), new Vector2(0.5f, 0.5f));
+        _voronoiTexture.Apply();
     }
 
-    private Color ColorFromPoint(Vector2 point)
+    private void ApplyTextureToUI()
     {
-        float hue = point.x / _size.x;
-        float saturation = point.y / _size.y;
-        return Color.HSVToRGB(hue, saturation, 1.0f);
+        if (_uiImage != null)
+        {
+            _uiImage.texture = _voronoiTexture;
+        }
     }
 }
-
