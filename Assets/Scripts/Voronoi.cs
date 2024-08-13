@@ -21,8 +21,10 @@ public class Voronoi : MonoBehaviour
     {
         GeneratePoints();
         GenerateVoronoiTexture();
+        GenerateOverlay();
         ApplyTextureToUI();
     }
+
 
     private void GeneratePoints()
     {
@@ -60,6 +62,16 @@ public class Voronoi : MonoBehaviour
 
                 _voronoiTexture.SetPixel(x, y, _colors[closestPointIndex]);
             }
+        }
+
+        _voronoiTexture.Apply();
+    }
+
+    private void GenerateOverlay()
+    {
+        foreach (Vector2 point in _points) 
+        {
+            _voronoiTexture.SetPixel((int)point.x, (int)point.y, Color.red);
         }
 
         _voronoiTexture.Apply();
